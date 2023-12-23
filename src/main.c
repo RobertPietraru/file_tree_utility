@@ -12,6 +12,15 @@ void get_target_directory(char *cwd, char *target_path) {
 
 	while (target_path[target_path_length] != '\0')
 		target_path_length++;
+
+	if (target_path_length == 0)
+		return;
+
+	if (target_path[0] == '/') {
+		strcpy(cwd, target_path);
+		return;
+	}
+
 	if (!(target_path_length == 1 && target_path[0] == '.')) {
 		strcat(cwd, "/");
 		strcat(cwd, target_path);
@@ -47,7 +56,20 @@ int is_folder_navigation_thingy(char *file) {
 	return 0;
 }
 
-void show_structure(char *cwd, int depth) {
+void show_structure(char *cwd, char *leading, int depth, int max_depth) {
+	if (depth > max_depth)
+		return;
+	char *next_leading = (char *)malloc(max_depth * 5 + 1);
+	char *next_leading_without_bar = (char *)malloc(max_depth * 5 + 1);
+
+	if (depth != 0) {
+		strcpy(next_leading, leading);
+		strcpy(next_leading_without_bar, leading);
+
+		strcat(next_leading, "| ");
+		strcat(next_leading_without_bar, "  ");
+	}
+
 	DIR *dir = opendir(cwd);
 
 	if (dir) {
@@ -63,8 +85,11 @@ void show_structure(char *cwd, int depth) {
 				break;
 		}
 
-		if (entry == NULL)
+		if (entry == NULL) {
+			free(next_leading);
+			free(next_leading_without_bar);
 			return;
+		}
 
 		char full_path[PATH_MAX];
 		while ((next_entry = readdir(dir)) != NULL) {
@@ -74,14 +99,13 @@ void show_structure(char *cwd, int depth) {
 
 			snprintf(full_path, sizeof(full_path), "%s/%s", cwd, entry->d_name);
 
-			for (int i = 0; i < depth; i++)
-				printf("   ");
+			printf("%s", leading);
 			printf("├");
 
 			if (stat(full_path, &file_stat) == 0 &&
 				S_ISDIR(file_stat.st_mode)) {
 				printf("─ %s/\n", entry->d_name);
-				show_structure(full_path, depth + 1);
+				show_structure(full_path, next_leading, depth + 1, max_depth);
 			} else {
 				printf("─ %s\n", entry->d_name);
 			}
@@ -91,13 +115,13 @@ void show_structure(char *cwd, int depth) {
 
 		snprintf(full_path, sizeof(full_path), "%s/%s", cwd, entry->d_name);
 
-		for (int i = 0; i < depth; i++)
-			printf("   ");
+		printf("%s", leading);
 		printf("└");
 
 		if (stat(full_path, &file_stat) == 0 && S_ISDIR(file_stat.st_mode)) {
 			printf("─ %s/\n", entry->d_name);
-			show_structure(full_path, depth + 1);
+			show_structure(full_path, next_leading_without_bar, depth + 1,
+						   max_depth);
 		} else {
 			printf("─ %s\n", entry->d_name);
 		}
@@ -111,6 +135,9 @@ void show_structure(char *cwd, int depth) {
 		printf("Something went wrong. \nidk\n");
 		/* opendir() failed for some other reason. */
 	}
+
+	free(next_leading);
+	free(next_leading_without_bar);
 }
 
 /// first parameter is the path where we show the structure
@@ -121,8 +148,9 @@ int main(int argc, char *argv[]) {
 
 	if (argc > 1)
 		get_target_directory(cwd, argv[1]);
+
 	printf("Showing file structure for %s\n\n", cwd);
-	show_structure(cwd, 0);
+	show_structure(cwd, "", 0, 20);
 
 	/// current working directory
 
