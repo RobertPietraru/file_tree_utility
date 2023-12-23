@@ -37,47 +37,69 @@ char *get_extension(char *filename) {
 	return ext;
 }
 
+int is_folder_navigation_thingy(char *file) {
+	int length = strlen(file);
+	if (length == 1 && file[0] == '.')
+		return 1;
+	if (length == 2 && file[0] == '.' && file[1] == '.')
+		return 1;
+
+	return 0;
+}
+
 void show_structure(char *cwd, int depth) {
 	DIR *dir = opendir(cwd);
 
 	if (dir) {
 		/* Directory exists. */
 
-		struct dirent *entry;
-		char *extension;
 		struct stat file_stat;
 
+		struct dirent *next_entry;
+		struct dirent *entry;
+
 		while ((entry = readdir(dir)) != NULL) {
+			if (!is_folder_navigation_thingy(entry->d_name))
+				break;
+		}
+
+		if (entry == NULL)
+			return;
+
+		char full_path[PATH_MAX];
+		while ((next_entry = readdir(dir)) != NULL) {
 			// Ignore "." and ".." entries
-			if (entry->d_name[0] != '.') {
-				// printf("%s\n", entry->d_name);
-				// char *extension = get_extension(entry->d_name);
-				char full_path[PATH_MAX];
-				snprintf(full_path, sizeof(full_path), "%s/%s", cwd,
-						 entry->d_name);
+			if (is_folder_navigation_thingy(next_entry->d_name))
+				continue;
 
-				if (depth > 0)
-					printf("|");
+			snprintf(full_path, sizeof(full_path), "%s/%s", cwd, entry->d_name);
 
-				for (int i = 0; i < depth; i++)
-					printf("   ");
-				printf("├");
+			for (int i = 0; i < depth; i++)
+				printf("   ");
+			printf("├");
 
-				if (stat(full_path, &file_stat) == 0 &&
-					S_ISDIR(file_stat.st_mode)) {
-					printf("─ %s/\n", entry->d_name);
-					show_structure(full_path, depth + 1);
-				} else {
-					printf("─ %s\n", entry->d_name);
-				}
-				// char *s = (char *)malloc(strlen(cwd) + strlen(entry->d_name)
-				// + 						 2); // +2 for '/' and null
-				// terminator
-
-				// printf("%d ", is);
-
-				// printf("%c\n", entry->d_type);
+			if (stat(full_path, &file_stat) == 0 &&
+				S_ISDIR(file_stat.st_mode)) {
+				printf("─ %s/\n", entry->d_name);
+				show_structure(full_path, depth + 1);
+			} else {
+				printf("─ %s\n", entry->d_name);
 			}
+
+			entry = next_entry;
+		}
+
+		snprintf(full_path, sizeof(full_path), "%s/%s", cwd, entry->d_name);
+
+		for (int i = 0; i < depth; i++)
+			printf("   ");
+		printf("└");
+
+		if (stat(full_path, &file_stat) == 0 && S_ISDIR(file_stat.st_mode)) {
+			printf("─ %s/\n", entry->d_name);
+			show_structure(full_path, depth + 1);
+		} else {
+			printf("─ %s\n", entry->d_name);
 		}
 
 		closedir(dir);
