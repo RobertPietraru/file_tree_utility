@@ -27,25 +27,6 @@ void get_target_directory(char *cwd, char *target_path) {
 	}
 }
 
-char *get_extension(char *filename) {
-
-	int last_dot = -1;
-	int index = 0;
-	while (filename[index] != '\0') {
-		if (filename[index] == '.')
-			last_dot = index;
-		index++;
-	}
-	if (last_dot == -1)
-		return "";
-
-	char *ext;
-	strcpy(ext, filename);
-	ext += last_dot;
-
-	return ext;
-}
-
 int is_folder_navigation_thingy(char *file) {
 	int length = strlen(file);
 	if (length == 1 && file[0] == '.')
@@ -59,16 +40,17 @@ int is_folder_navigation_thingy(char *file) {
 void show_structure(char *cwd, char *leading, int depth, int max_depth) {
 	if (depth > max_depth)
 		return;
+
 	char *next_leading = (char *)malloc(max_depth * 5 + 1);
 	char *next_leading_without_bar = (char *)malloc(max_depth * 5 + 1);
 
-	if (depth != 0) {
-		strcpy(next_leading, leading);
-		strcpy(next_leading_without_bar, leading);
+	// if (depth != 0) {
+	strcpy(next_leading, leading);
+	strcpy(next_leading_without_bar, leading);
 
-		strcat(next_leading, "| ");
-		strcat(next_leading_without_bar, "  ");
-	}
+	strcat(next_leading, "| ");
+	strcat(next_leading_without_bar, "  ");
+	// }
 
 	DIR *dir = opendir(cwd);
 
@@ -102,12 +84,13 @@ void show_structure(char *cwd, char *leading, int depth, int max_depth) {
 			printf("%s", leading);
 			printf("├");
 
+			printf("─ %s", entry->d_name);
 			if (stat(full_path, &file_stat) == 0 &&
 				S_ISDIR(file_stat.st_mode)) {
-				printf("─ %s/\n", entry->d_name);
+				printf("/\n");
 				show_structure(full_path, next_leading, depth + 1, max_depth);
 			} else {
-				printf("─ %s\n", entry->d_name);
+				printf("\n");
 			}
 
 			entry = next_entry;
@@ -150,7 +133,8 @@ int main(int argc, char *argv[]) {
 		get_target_directory(cwd, argv[1]);
 
 	printf("Showing file structure for %s\n\n", cwd);
-	show_structure(cwd, "", 0, 20);
+
+	show_structure(cwd, "", 0, 10);
 
 	/// current working directory
 
