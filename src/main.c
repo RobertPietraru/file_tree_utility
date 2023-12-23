@@ -1,12 +1,13 @@
 #include <dirent.h>
 #include <errno.h>
+#include <linux/limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
 #include <unistd.h>
-#include <linux/limits.h>
 
+int show_hidden_files = 0;
 void get_target_directory(char *cwd, char *target_path) {
 	int target_path_length = 0;
 
@@ -78,6 +79,8 @@ void show_structure(char *cwd, char *leading, int depth, int max_depth) {
 			// Ignore "." and ".." entries
 			if (is_folder_navigation_thingy(next_entry->d_name))
 				continue;
+			if (!show_hidden_files && next_entry->d_name[0] == '.')
+				continue;
 
 			snprintf(full_path, sizeof(full_path), "%s/%s", cwd, entry->d_name);
 
@@ -128,9 +131,15 @@ int main(int argc, char *argv[]) {
 	char cwd[PATH_MAX];
 
 	char *x = getcwd(cwd, sizeof(cwd));
+	for (int index = 1; index < argc; index++) {
+		if (argv[index][0] != '-') {
+			get_target_directory(cwd, argv[index]);
+		}
 
-	if (argc > 1)
-		get_target_directory(cwd, argv[1]);
+		if (!strcmp(argv[index], "-a")) {
+			show_hidden_files = 1;
+		}
+	}
 
 	printf("Showing file structure for %s\n\n", cwd);
 
