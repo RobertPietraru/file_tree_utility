@@ -4,8 +4,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
-#include <sys/types.h>
 #include <unistd.h>
+#include <linux/limits.h>
 
 void get_target_directory(char *cwd, char *target_path) {
 	int target_path_length = 0;
