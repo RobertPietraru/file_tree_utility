@@ -8,6 +8,7 @@
 #include <unistd.h>
 
 int show_hidden_files = 0;
+
 void get_target_directory(char *cwd, char *target_path) {
   int target_path_length = 0;
 
@@ -139,10 +140,22 @@ void show_structure(char *cwd, char *leading, int depth, int max_depth) {
 int main(int argc, char *argv[]) {
   char cwd[PATH_MAX];
 
-  char *x = getcwd(cwd, sizeof(cwd));
+  getcwd(cwd, sizeof(cwd));
+
+  if (argc == 1) {
+    printf("Welcome to the \"Structer\" utility\n\n");
+    printf("To use it run\n\n structer .\n\n");
+    printf("You can pass in a specific folder like so\n\n structer "
+           "/path/to/folder\n\n");
+    printf("You can also show hidden folders and files with -a\n\n structer . "
+           "-a\n");
+    return 0;
+  }
+
   for (int index = 1; index < argc; index++) {
     if (argv[index][0] != '-') {
       get_target_directory(cwd, argv[index]);
+      continue;
     }
 
     if (!strcmp(argv[index], "-a")) {
